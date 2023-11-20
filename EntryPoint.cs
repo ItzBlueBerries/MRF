@@ -9,7 +9,10 @@ namespace MRF
 {
     public class EntryPoint : MelonMod
     {
+        public static MelonLogger.Instance modLogger = new MelonLogger.Instance("MRF"); 
+
         public override void OnInitializeMelon() { }
+
         private static void Spawn(string name)
         {
             var instancePlayer = SRSingleton<SceneContext>.Instance.Player;
