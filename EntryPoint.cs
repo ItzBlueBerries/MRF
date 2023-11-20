@@ -4,7 +4,7 @@ using MelonLoader;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-[assembly: MelonInfo(typeof(MRF.EntryPoint), "MRF", "1.0.0", "Mod Contributors")]
+[assembly: MelonInfo(typeof(MRF.EntryPoint), "MRF", "1.0.2", "Mod Contributors")]
 namespace MRF
 {
     public class EntryPoint : MelonMod
