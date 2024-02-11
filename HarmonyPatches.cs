@@ -86,52 +86,65 @@ internal class HarmonyPatches
                 modLogger.Warning($"Plot TypeId is NONE, removing plot: {landPlotV02.TypeId}");
                 __instance.gameState.Ranch.Plots.Remove(landPlotV02);
             }
+                // WEATHER
+                PersistenceIdReverseLookupTable<IWeatherState> idToStateTable = __instance._weatherStateTranslation.ReverseLookupTable;
+                PersistenceIdReverseLookupTable<WeatherPatternDefinition> idToPatternTable = __instance._weatherPatternTranslation.ReverseLookupTable;
+                PersistenceIdLookupTable<IWeatherState> stateLookup = __instance._weatherStateTranslation.InstanceLookupTable;
+                PersistenceIdLookupTable<WeatherPatternDefinition> patternLookup = __instance._weatherPatternTranslation.InstanceLookupTable;
+                WeatherV01 weatherV01 = __instance.gameState.Weather;
+                List<string> stateTable = new List<string>();
+                if (idToStateTable._indexTable != null)
+                {
+                    stateTable = idToStateTable._indexTable.ToList();
+                }
+                List<string> patternTable = new List<string>();
+                if (idToPatternTable._indexTable != null)
+                {
+                    patternTable = idToPatternTable._indexTable.ToList();
+                }
 
-            // WEATHER
-            PersistenceIdReverseLookupTable<IWeatherState> idToStateTable = __instance._weatherStateTranslation.ReverseLookupTable;
-            PersistenceIdReverseLookupTable<WeatherPatternDefinition> idToPatternTable = __instance._weatherPatternTranslation.ReverseLookupTable;
-            PersistenceIdLookupTable<IWeatherState> stateLookup = __instance._weatherStateTranslation.InstanceLookupTable;
-            PersistenceIdLookupTable<WeatherPatternDefinition> patternLookup = __instance._weatherPatternTranslation.InstanceLookupTable;
-            WeatherV01 weatherV01 = __instance.gameState.Weather;
+                var stateDict = __instance._weatherStateTranslation.RawLookupDictionary;
 
-            List<string> stateTable = idToStateTable._indexTable.ToList();
-            List<string> patternTable = idToPatternTable._indexTable.ToList();
+                if (idToStateTable._indexTable != null)
+                {
+                    var stateIndexes = idToStateTable._indexTable.Where(index => !stateDict.ContainsKey(index));
+                    foreach (var index in stateIndexes)
+                    {
+                        modLogger.Warning($"Weather State is unavailable, removing weather state named {index}");
+                        stateTable.Remove(index);
+                    }
+                }
+                var patternDict = __instance._weatherPatternTranslation.RawLookupDictionary;
+                if (idToPatternTable._indexTable != null)
+                {
+                    var patternIndexes = idToPatternTable._indexTable.Where(index => !patternDict.ContainsKey(index));
+                    foreach (var index in patternIndexes)
+                    {
+                        modLogger.Warning($"Weather Pattern is unavailable, removing weather pattern named {index}");
+                        patternTable.Remove(index);
+                    }
+                }
 
-            var stateDict = __instance._weatherStateTranslation.RawLookupDictionary;
-            var stateIndexes = idToStateTable._indexTable.Where(index => !stateDict.ContainsKey(index));
-            foreach (var index in stateIndexes)
-            {
-                modLogger.Warning($"Weather State is unavailable, removing weather state named {index}");
-                stateTable.Remove(index);
-            }
+                foreach (var entry in weatherV01.Entries)
+                {
+                    var entryStateIds = entry.StateCompletionTimeIDs.ToArray().Where(id => !stateLookup._reverseIndex.ContainsValue(id));
+                    foreach (var id in entryStateIds)
+                        entry.StateCompletionTimeIDs.Remove(id);
 
-            var patternDict = __instance._weatherPatternTranslation.RawLookupDictionary;
-            var patternIndexes = idToPatternTable._indexTable.Where(index => !patternDict.ContainsKey(index));
-            foreach (var index in patternIndexes)
-            {
-                modLogger.Warning($"Weather Pattern is unavailable, removing weather pattern named {index}");
-                patternTable.Remove(index);
-            }
+                    var entryPatternIds = entry.PatternCompletionTimeIDs.ToArray().Where(id => !patternLookup._reverseIndex.ContainsValue(id));
+                    foreach (var id in entryPatternIds)
+                        entry.PatternCompletionTimeIDs.Remove(id);
 
-            foreach (var entry in weatherV01.Entries)
-            {
-                var entryStateIds = entry.StateCompletionTimeIDs.ToArray().Where(id => !stateLookup._reverseIndex.ContainsValue(id));
-                foreach (var id in entryStateIds)
-                    entry.StateCompletionTimeIDs.Remove(id);
+                    var forecastEntries = entry.Forecast.ToArray().Where(id => !stateLookup._reverseIndex.ContainsValue(id.StateID) || !patternLookup._reverseIndex.ContainsValue(id.PatternID));
+                    foreach (var forecastEntry in forecastEntries)
+                        entry.Forecast.Remove(forecastEntry);
+                }
 
-                var entryPatternIds = entry.PatternCompletionTimeIDs.ToArray().Where(id => !patternLookup._reverseIndex.ContainsValue(id));
-                foreach (var id in entryPatternIds)
-                    entry.PatternCompletionTimeIDs.Remove(id);
-
-                var forecastEntries = entry.Forecast.ToArray().Where(id => !stateLookup._reverseIndex.ContainsValue(id.StateID) || !patternLookup._reverseIndex.ContainsValue(id.PatternID));
-                foreach (var forecastEntry in forecastEntries)
-                    entry.Forecast.Remove(forecastEntry);
-            }
-
-            idToStateTable._indexTable = stateTable.ToArray();
-            idToPatternTable._indexTable = patternTable.ToArray();
-            __instance.gameState.WeatherIndex.StateIndexTable = stateTable.ToArray();
-            __instance.gameState.WeatherIndex.PatternIndexTable = patternTable.ToArray();
+                idToStateTable._indexTable = stateTable.ToArray();
+                idToPatternTable._indexTable = patternTable.ToArray();
+                __instance.gameState.WeatherIndex.StateIndexTable = stateTable.ToArray();
+                __instance.gameState.WeatherIndex.PatternIndexTable = patternTable.ToArray();
+         
         }
 
 

@@ -13,15 +13,5 @@ namespace MRF
 
         public override void OnInitializeMelon() { }
 
-        private static void Spawn(string name)
-        {
-            var instancePlayer = SRSingleton<SceneContext>.Instance.Player;
-            SRBehaviour.InstantiateActor(
-                Resources.FindObjectsOfTypeAll<GameObject>().FirstOrDefault(x => x.name.Equals(name)),
-                SRSingleton<SceneContext>.Instance.RegionRegistry.CurrentSceneGroup,
-                instancePlayer.transform.position, instancePlayer.transform.rotation);
-        }
-
-        public static void SpawnGastroPodForTest() => Spawn("brineGastropod");
     }
 }
